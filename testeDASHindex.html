@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Tuberculose nos Municípios de Goiás</title>
+
+    <!-- Carregue o jQuery primeiro -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    <!-- Carregue o Bootstrap e ECharts -->
+    <script src="./src/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="./src/assets/echarts/echarts.min.js"></script>
+
+    <!-- Inclua qualquer outro CSS necessário aqui -->
+    <link href="./src/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Estilo inline (exemplo) -->
+    <style>
+        #chart1, #chart2, #chart3, #chart4 {
+            width: 600px; 
+            height: 400px; 
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Dashboard de Tuberculose nos Municípios de Goiás</h1>
+        <label for="periodo">Selecione o Período:</label>
+        <input type="text" id="periodo" class="form-control">
+
+        <!-- Gráficos -->
+        <div id="chart1"></div>
+        <div id="chart2"></div>
+        <div id="chart3"></div>
+        <div id="chart4"></div>
+    </div>
+
+    <!-- Script personalizado -->
+    <script type="text/javascript">
+        console.log('Iniciando carregamento de dados...');
+
+        $.ajax({
+            url: 'https://dados.saude.go.gov.br/api/3/action/datastore_search_sql?sql=SELECT * from "6e0a083a-ed94-42bf-8778-b882a831332e"',
+            method: 'GET',
+            success: function (data) {
+                console.log("Dados carregados com sucesso:", data.result.records);
+                processData(data.result.records); // Chame a função para processar dados
+            },
+            error: function (error) {
+                console.error("Erro ao carregar dados:", error);
+            }
+        });
+
+        function processData(data) {
+            console.log('Processando dados...');
+            var agrupados = {};
+            data.forEach(record => {
+                const municipio = record.municipio_residencia;
+                if (!agrupados[municipio]) {
+                    agrupados[municipio] = 0;
+                }
+                agrupados[municipio] += 1; 
+            });
+
+            var municipios = Object.keys(agrupados);
+            var casos = Object.values(agrupados);
+
+            console.log('Dados processados:', municipios, casos);
+            initCharts(municipios, casos);
+        }
+
+        function initCharts(municipios, casos) {
+            console.log('Iniciando gráficos...');
+            var myChart1 = echarts.init(document.getElementById('chart1'));
+            var myChart2 = echarts.init(document.getElementById('chart2'));
+            var myChart3 = echarts.init(document.getElementById('chart3'));
+            var myChart4 = echarts.init(document.getElementById('chart4'));
+
+            var option1 = {
+                title: { text: 'Casos de Tuberculose - Barra' },
+                tooltip: {},
+                xAxis: { data: municipios },
+                yAxis: {},
+                series: [{ type: 'bar', data: casos }]
+            };
+
+            var option2 = {
+                title: { text: 'Casos de Tuberculose - Linha' },
+                tooltip: {},
+                xAxis: { data: municipios },
+                yAxis: {},
+                series: [{ type: 'line', data: casos }]
+            };
+
+            var option3 = {
+                title: { text: 'Proporção de Casos - Pizza' },
+                tooltip: { trigger: 'item' },
+                series: [
+                    {
+                        name: 'Casos',
+                        type: 'pie',
+                        radius: '50%',
+                        data: municipios.map((municipio, index) => ({ value: casos[index], name: municipio }))
+                    }
+                ]
+            };
+
+            var option4 = {
+                title: { text: 'Casos de Tuberculose - Dispersão' },
+                tooltip: {},
+                xAxis: { type: 'category', data: municipios },
+                yAxis: { type: 'value' },
+                series: [{ type: 'scatter', data: casos }]
+            };
+
+            myChart1.setOption(option1);
+            myChart2.setOption(option2);
+            myChart3.setOption(option3);
+            myChart4.setOption(option4);
+            console.log('Gráficos carregados.');
+        }
+    </script>
+</body>
+</html>
